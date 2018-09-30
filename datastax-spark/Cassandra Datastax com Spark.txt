@@ -1,0 +1,67 @@
+#Terminal 1 - Iniciar serviço Cassandra - Datastax
+root@ds320:~# dse cassandra
+
+
+
+
+#Terminal 2 - Comandos Cassandra - CQL
+
+root@ds320:~# cqlsh 
+
+cqlsh> CREATE KEYSPACE "Academico" WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1 } ;
+
+cqlsh> use "Academico";
+
+cqlsh:Academico> create table aluno (id UUID, nome text, materia  text, nota float , falta int, PRIMARY KEY ( (id),materia));
+
+cqlsh:Academico> describe aluno;
+
+cqlsh:Academico> insert into aluno (id, nome, materia, nota, falta) values (uuid(), 'João', 'Matemática', 7, 1);
+
+cqlsh:Academico> insert into aluno (id, nome, materia, nota, falta) values (uuid(),'Maria', 'Matemática', 6, 2);
+
+cqlsh:Academico> insert into aluno (id, nome, materia, nota, falta) values (uuid(),'Maria', 'História', 9, 8);
+
+cqlsh:Academico> insert into aluno (id, nome, materia, nota, falta) values (uuid(),'Pedro', 'Inglês', 5, 0);
+
+cqlsh:Academico> insert into aluno (id, nome, materia, nota, falta) values (uuid(),'Andressa', 'Artes', 10, 0);
+
+
+
+
+#Terminal 3 - Comandos Spark - Datastax
+
+root@ds320:~# dse spark
+
+scala> case class Aluno( id : java.util.UUID, nome : String, materia : String, nota : Float, falta : Int );
+
+scala> val rddAlunos = sc.cassandraTable[Aluno]("Academico","aluno");
+
+scala> val rddSomaFaltas = rddAlunos.map(aluno => aluno.falta).reduce{case(x,y) => x+y};
+
+scala> println("Média Faltas: "+ rddSomaFaltas );
+
+scala> val rddTotalRows = rddAlunos.count ;
+
+scala> println("Total de registros: "+ rddTotalRows );
+
+scala> val rddSomaNotas = rddAlunos.map(aluno => aluno.nota).reduce{case(x,y) => x+y};
+
+scala> val rddMediaNotas = rddSomaNotas / rddTotalRows ;
+
+scala> println("Média Notas: "+ rddMediaNotas );
+
+scala> val rddmediasboas =rddAlunos.filter(aluno => (aluno.nota.get > 7));
+
+scala> rddmediasboas.collect;
+
+scala> rddmediasboas.saveAsCassandraTable("Academico", "medias_boas",SomeColumns("id", "nome", "materia", "nota", "falta"));
+
+
+
+
+#Terminal 2 - Comandos Cassandra - CQL
+
+cqlsh:Academico> describe medias_boas;
+
+cqlsh:Academico> select * from medias_boas;
